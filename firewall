@@ -1,0 +1,152 @@
+#!/bin/sh
+
+if [ ! -r /etc/default/firewall ]
+then
+        exit 1
+fi
+
+. /etc/default/firewall
+
+IpPrivate=`ifconfig eth0 | awk '/inet addr:/ {split ($2,A,":"); print A[2]}'`
+IpPublic=`curl ifconfig.me`
+
+echo $IpPrivate
+
+case "$1" in
+ start)
+
+echo -n "Setup firewall rules..."
+
+# PURGE FIREWALL RULES
+iptables --flush
+iptables --delete-chain
+
+iptables -P INPUT DROP
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD ACCEPT
+
+# DROP AND LOG USER CHAIN
+iptables -N LOG_DROP_SPOOFED
+iptables -A LOG_DROP_SPOOFED -j LOG --log-prefix "Spoofed source IP:"
+iptables -A LOG_DROP_SPOOFED -j DROP
+
+# ACCEPT TRAFFIC ON localhost
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A OUTPUT -o lo -j ACCEPT
+
+#Grupos con ipset
+ipset -X Management
+ipset -N Management nethash # nethash => para indicar una red
+ipset -A Management 192.168.1.0/24
+
+ipset -X trusted
+ipset -N trusted iphash
+ipset -A trusted 192.168.1.15
+ipset -A trusted 192.168.1.60
+ipset -A trusted 192.168.1.100
+
+ipset -X Banned
+ipset -N Banned iphash # iphash => para indicar una ip
+ipset -A Banned 25.25.25.25
+ipset -A Banned 69.162.62.131
+
+# ACCEPT TRAFFIC FROM TRUSTED HOSTS
+iptables -A INPUT -m set --set Management src -j ACCEPT
+iptables -A INPUT -m set --set Banned src -j DROP
+
+# THE ROUTER ITSELF
+iptables -A INPUT -s ${IpPrivate} -j LOG_DROP_SPOOFED
+
+# STEALH SCAN
+iptables -A INPUT -p tcp ! --syn -m state --state NEW -j LOG --log-prefix "Stealh scan attempt"
+iptables -A INPUT -p tcp ! --syn -m state --state NEW -j DROP
+
+# ALLOW ESTABLISHED, RELATED
+iptables -A INPUT -j ACCEPT -m state --state ESTABLISHED,RELATED
+iptables -A FORWARD -j ACCEPT -m state --state ESTABLISHED,RELATED
+iptables -A OUTPUT -j ACCEPT -m state --state ESTABLISHED,RELATED
+
+# ALLOW INBOUND PING
+iptables -A INPUT -p icmp -m state --state NEW -j ACCEPT
+iptables -A INPUT -p icmp -m limit --limit 2/s -j ACCEPT
+
+# ALLOW FTP
+iptables -A INPUT -m set --set Management src -p tcp --dport ftp -m state --state NEW -j ACCEPT
+iptables -A INPUT -m helper --helper ftp -j ACCEPT
+
+# ALLOW INBOUND SSH 
+iptables -A INPUT -m set --set Management src -p tcp --dport 22 -j ACCEPT
+iptables -A INPUT -m set --set trusted src -p tcp --dport 22 -j ACCEPT
+
+# ALLOW INBOUND DNS
+iptables -A INPUT -m set --set Management src -p tcp --dport 53 -j ACCEPT
+iptables -A INPUT -m set --set trusted src -p tcp --dport 53 -j ACCEPT
+
+# ALLOW INBOUND HTTP
+iptables -A INPUT -m set --set Management src -p tcp --dport 80 -j ACCEPT
+iptables -A INPUT -m set --set trusted src -p tcp --dport 80 -j ACCEPT
+
+# ALLOW SNMP
+iptables -A INPUT -m set --set Management src -p udp  --dport 161 -j ACCEPT
+iptables -A INPUT -m set --set sentinel src -p udp  --dport 161 -j ACCEPT
+
+# ALLOW INBOUND HTTPS
+iptables -A INPUT -m set --set Management src -p tcp --dport 443 -j ACCEPT
+iptables -A INPUT -m set --set trusted src -p tcp --dport 443 -j ACCEPT
+
+# ALLOW INBOUND
+iptables -A INPUT -m set --set Management src -p tcp --dport 9091 -j ACCEPT
+iptables -A INPUT -m set --set trusted src -p tcp --dport 9091 -j ACCEPT
+
+
+# Dropbox
+#iptables -A INPUT -p tcp --dport 17500 -j ACCEPT
+# smbd
+iptables -A INPUT -p tcp --dport 139 -j ACCEPT
+# smbd
+iptables -A INPUT -p tcp --dport 445 -j ACCEPT
+# vmware
+#iptables -A INPUT -p tcp --dport 902 -j ACCEPT
+# nmbd
+#iptables -A INPUT -p udp --dport 137 -j ACCEPT
+
+#iptables -A INPUT -p udp --dport 10000:40000 -j ACCEPT
+#iptables -A OUTPUT -p udp --dport 10000:40000 -j ACCEPT
+#iptables -A OUTPUT -p udp --dport 53 -j ACCEPT
+#iptables -A OUTPUT -j ACCEPT
+
+
+
+# LOG ANYTHING NOT ACCEPTED ABOVE
+iptables -A INPUT -j LOG -m limit  --limit 30/minute --log-prefix "Dropped by default (INPUT):"
+iptables -A OUTPUT -j LOG -m limit --limit 30/minute --log-prefix "Dropped by default (OUTPUT):"
+
+
+echo "[Done]"
+;;
+
+stop)
+echo -n "Reseting firewall rules..."
+iptables --flush
+iptables --delete-chain
+iptables -P INPUT ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD ACCEPT
+
+echo "[Done]"
+;;
+
+status)
+iptables --line-numbers -v --list
+;;
+restart)
+        /etc/init.d/firewall stop
+        /etc/init.d/firewall start
+;;
+
+*)
+        echo "Usage /etc/init.d/iptables.sh {start|stop|restart}"
+        exit 1
+;;
+
+esac

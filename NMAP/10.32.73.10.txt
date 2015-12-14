@@ -1,0 +1,28 @@
+Warning: The following modules could not be loaded!
+
+	/opt/metasploit/msf3/modules/post/windows/gather/credentials/outlook.rb: SyntaxError /opt/metasploit/msf3/modules/post/windows/gather/credentials/outlook.rb:35: syntax error, unexpected tLSHFT, expecting ')'
+<<<<<<< .mine
+  ^
+/opt/metasploit/msf3/modules/post/windows/gather/credentials/outlook.rb:36: syntax error, unexpected tASSOC, expecting keyword_end
+				'Version'       => '$Revision: 16264 $',
+				                  ^
+/opt/metasploit/msf3/modules/post/windows/gather/credentials/outlook.rb:36: syntax error, unexpected ',', expecting keyword_end
+/opt/metasploit/msf3/modules/post/windows/gather/credentials/outlook.rb:37: syntax error, unexpected tASSOC, expecting keyword_end
+				'Platform'      => [ 'windows' ],
+				                  ^
+/opt/metasploit/msf3/modules/post/windows/gather/credentials/outlook.rb:37: syntax error, unexpected ',', expecting keyword_end
+/opt/metasploit/msf3/modules/post/windows/gather/credentials/outlook.rb:39: syntax error, unexpected tASSOC, expecting keyword_end
+				'Platform'      => [ 'win' ],
+				                  ^
+/opt/metasploit/msf3/modules/post/windows/gather/credentials/outlook.rb:39: syntax error, unexpected ',', expecting keyword_end
+/opt/metasploit/msf3/modules/post/windows/gather/credentials/outlook.rb:41: syntax error, unexpected tASSOC, expecting keyword_end
+				'SessionTypes'  => [ 'meterpreter' ]
+				                  ^
+/opt/metasploit/msf3/modules/post/windows/gather/credentials/outlook.rb:42: syntax error, unexpected ')', expecting keyword_end
+			))
+			 ^
+/opt/metasploit/msf3/modules/post/windows/gather/credentials/outlook.rb:378: syntax error, unexpected $end, expecting keyword_end
+
+[1m[34m[*][0m Verifying vulnerable status... (path: 0x0000005a)
+[+] The target is vulnerable.
+
