@@ -1,5 +1,5 @@
 #!/usr/bin/perl -wT
-#uso: /usr/bin/perl -wT /usr/local/sbin/logmon.pl -m sysadmins@nixus.es -u asterisk -g adm -f /var/log/asterisk/messages -p Lagged -i 60
+#uso: /usr/bin/perl -wT /usr/local/sbin/logmon.pl -m sysadmins@github.com -u asterisk -g adm -f /var/log/asterisk/messages -p Lagged -i 60
 # /usr/bin/perl -wT /usr/local/sbin/logmon.pl -m pablojoserocamora@gmail.com -u procamora -g adm -f /var/log/syslog -p FRASEABUSCAR -i 60
 # Parses given logfile, looking for specified pattern, sends alert or
 # logs message.
